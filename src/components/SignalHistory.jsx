@@ -1,10 +1,13 @@
 import React from 'react';
-import { Award, CheckCircle, XCircle, MinusCircle, ShieldCheck } from 'lucide-react';
+import { History, CheckCircle, XCircle, MinusCircle, ShieldCheck, Award } from 'lucide-react';
+import { isCurrentTradingWeek } from '../utils/dateUtils';
 
 export default function SignalHistory({ signals, onSelectSignal }) {
   // Filter for completed/expired signals (WON, LOST, TIE, or expired ACTIVE signals)
+  // AND they must belong to the current active trading week (Mon-Fri)
   const historySignals = signals.filter(
-    (s) => s.status !== 'ACTIVE' || new Date(s.expiry_time).getTime() <= new Date().getTime()
+    (s) => (s.status !== 'ACTIVE' || new Date(s.expiry_time).getTime() <= new Date().getTime()) 
+           && isCurrentTradingWeek(s.created_at)
   );
 
   // Stats calculation
@@ -41,7 +44,7 @@ export default function SignalHistory({ signals, onSelectSignal }) {
     <div className="history-wrapper">
       <div className="history-header">
         <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Award size={20} style={{ color: 'var(--accent-blue)' }} /> 1-Week Signal History
+          <History size={20} style={{ color: 'var(--accent-blue)' }} /> Signal History
         </h2>
         <div className="history-stats">
           <div className="stat-item">

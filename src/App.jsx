@@ -5,6 +5,7 @@ import SearchingPairs from './components/SearchingPairs';
 import ActiveSignals from './components/ActiveSignals';
 import SignalHistory from './components/SignalHistory';
 import SignalDetailModal from './components/SignalDetailModal';
+import WeeklyPerformance from './components/WeeklyPerformance';
 import './App.css';
 
 // Initialize Supabase Client
@@ -38,7 +39,7 @@ export default function App() {
           .from('signals')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(100);
+          .limit(1000);
 
         if (error) {
           console.error('Error fetching signals:', error.message);
@@ -174,6 +175,10 @@ export default function App() {
             signals={signals} 
             onSelectSignal={(sig) => setSelectedSignal(sig)} 
           />
+        )}
+
+        {activeTab === 'weekly' && (
+          <WeeklyPerformance signals={signals} />
         )}
       </main>
 

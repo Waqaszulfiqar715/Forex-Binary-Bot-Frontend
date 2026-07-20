@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Radio, Activity, History, Search } from 'lucide-react';
+import { Shield, Radio, Activity, History, Search, BarChart2 } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, activeSignalsCount }) {
   return (
@@ -48,6 +48,13 @@ export default function Navbar({ activeTab, setActiveTab, activeSignalsCount }) 
         >
           <History size={16} />
           Signal History
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'weekly' ? 'active' : ''}`}
+          onClick={() => setActiveTab('weekly')}
+        >
+          <BarChart2 size={16} />
+          Weekly Performance
         </button>
       </nav>
 
