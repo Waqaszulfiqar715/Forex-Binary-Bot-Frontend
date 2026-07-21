@@ -84,6 +84,7 @@ export default function SignalHistory({ signals, onSelectSignal }) {
                 <th>Time</th>
                 <th>Pair</th>
                 <th>Type</th>
+                <th>Strategy</th>
                 <th>Entry Price</th>
                 <th>Expiry Price</th>
                 <th>Status</th>
@@ -99,6 +100,11 @@ export default function SignalHistory({ signals, onSelectSignal }) {
                   <td>
                     <span className={`badge-type ${signal.type === 'CALL' ? 'call' : 'put'}`}>
                       {signal.type}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: '0.85rem', color: '#a3a3a3', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
+                      {signal.strategy || 'Trend Exhaustion'}
                     </span>
                   </td>
                   <td>{Number(signal.entry_price).toFixed(5)}</td>

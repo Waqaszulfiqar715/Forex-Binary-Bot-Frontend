@@ -98,6 +98,11 @@ function ActiveSignalCard({ signal, livePrice }) {
           <span>{timeLeft > 0 ? formatTime(timeLeft) : 'EXPIRING...'}</span>
         </div>
       </div>
+      <div style={{ textAlign: 'center', marginTop: '-10px', marginBottom: '15px' }}>
+        <span style={{ fontSize: '0.8rem', padding: '2px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: '#ccc' }}>
+          {signal.strategy || 'Trend Exhaustion'}
+        </span>
+      </div>
 
       <div className="signal-body">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
