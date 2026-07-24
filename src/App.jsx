@@ -85,46 +85,27 @@ export default function App() {
     };
   }, []);
 
-  // 3. Poll TradingView Scanner API for live prices (Bypasses Tiingo limits, no API key needed, no CORS issues!)
+  // 3. Poll Backend API for True Live Prices (Tiingo WebSocket routed via Render)
   useEffect(() => {
     let intervalId;
 
     const fetchLivePrices = async () => {
       try {
-        const url = "https://scanner.tradingview.com/forex/scan";
-        
-        // Convert frxEURUSD -> FX:EURUSD
-        const tvTickers = MONITORED_PAIRS.map(p => "FX:" + p.replace("frx", "").toUpperCase());
-        
-        const body = {
-          symbols: { tickers: tvTickers },
-          columns: ["close"]
-        };
-
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: JSON.stringify(body)
-        });
+        const url = "https://forex-binary-bot-backend-1.onrender.com/api/prices";
+        const response = await fetch(url);
         
         if (!response.ok) return;
         
         const data = await response.json();
         
-        if (data && data.data && Array.isArray(data.data)) {
+        if (data && Object.keys(data).length > 0) {
           setLivePrices((prev) => {
             const newPrices = { ...prev };
             let hasChanges = false;
             
-            data.data.forEach(item => {
-              // Convert FX:EURUSD -> frxEURUSD
-              const ticker = item.s.replace("FX:", "");
-              const symbol = "frx" + ticker;
-              const price = item.d[0];
-              
-              if (symbol && price && prev[symbol] !== price) {
+            Object.keys(data).forEach(symbol => {
+              const price = data[symbol];
+              if (price && prev[symbol] !== price) {
                 setPrevPrices(p => ({ ...p, [symbol]: prev[symbol] || price }));
                 newPrices[symbol] = price;
                 hasChanges = true;
@@ -142,8 +123,8 @@ export default function App() {
     // Fetch immediately on mount
     fetchLivePrices();
     
-    // Poll every 3 seconds (TradingView scanner allows fast polling for free)
-    intervalId = setInterval(fetchLivePrices, 3000);
+    // Poll every 1 second for ultra-fast updates
+    intervalId = setInterval(fetchLivePrices, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
