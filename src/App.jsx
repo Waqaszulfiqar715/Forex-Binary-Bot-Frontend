@@ -85,33 +85,46 @@ export default function App() {
     };
   }, []);
 
-  // 3. Poll Tiingo REST API via corsproxy for live prices (bypasses 1-connection WS limit and browser blocks)
+  // 3. Poll TradingView Scanner API for live prices (Bypasses Tiingo limits, no API key needed, no CORS issues!)
   useEffect(() => {
     let intervalId;
 
     const fetchLivePrices = async () => {
       try {
-        const tiingoPairs = MONITORED_PAIRS.map(p => p.replace("frx", "").toLowerCase()).join(",");
-        const targetUrl = encodeURIComponent(`https://api.tiingo.com/tiingo/fx/top?tickers=${tiingoPairs}&token=6d5442a6595792eed12d7371665df2190ade68fe`);
-        const proxyUrl = `https://corsproxy.io/?${targetUrl}`;
+        const url = "https://scanner.tradingview.com/forex/scan";
         
-        const response = await fetch(proxyUrl);
+        // Convert frxEURUSD -> FX:EURUSD
+        const tvTickers = MONITORED_PAIRS.map(p => "FX:" + p.replace("frx", "").toUpperCase());
+        
+        const body = {
+          symbols: { tickers: tvTickers },
+          columns: ["close"]
+        };
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: JSON.stringify(body)
+        });
+        
         if (!response.ok) return;
         
         const data = await response.json();
         
-        if (Array.isArray(data)) {
+        if (data && data.data && Array.isArray(data.data)) {
           setLivePrices((prev) => {
             const newPrices = { ...prev };
             let hasChanges = false;
             
-            data.forEach(item => {
-              const ticker = String(item.ticker).toUpperCase();
+            data.data.forEach(item => {
+              // Convert FX:EURUSD -> frxEURUSD
+              const ticker = item.s.replace("FX:", "");
               const symbol = "frx" + ticker;
-              const price = item.midPrice || item.bidPrice;
+              const price = item.d[0];
               
               if (symbol && price && prev[symbol] !== price) {
-                // Update prevPrices dynamically without causing nested set state issues
                 setPrevPrices(p => ({ ...p, [symbol]: prev[symbol] || price }));
                 newPrices[symbol] = price;
                 hasChanges = true;
@@ -129,8 +142,8 @@ export default function App() {
     // Fetch immediately on mount
     fetchLivePrices();
     
-    // Poll every 8 seconds (Tiingo limits are 500 req/hr, so 8s = 450 req/hr)
-    intervalId = setInterval(fetchLivePrices, 8000);
+    // Poll every 3 seconds (TradingView scanner allows fast polling for free)
+    intervalId = setInterval(fetchLivePrices, 3000);
 
     return () => clearInterval(intervalId);
   }, []);
