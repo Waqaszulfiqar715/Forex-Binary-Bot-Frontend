@@ -88,37 +88,50 @@ export default function App() {
   // 3. Connect to Deriv WebSocket for real-time live prices
   useEffect(() => {
     const connectWS = () => {
-      const wsUrl = "wss://ws.derivws.com/websockets/v3?app_id=1089";
-      console.log("Connecting frontend to Deriv WS for live prices:", wsUrl);
+      const wsUrl = "wss://api.tiingo.com/fx";
+      console.log("Connecting frontend to Tiingo WS for live prices...");
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("Frontend WS Connected. Subscribing to ticks...");
-        // Subscribe to live tick feeds for all monitored pairs
-        MONITORED_PAIRS.forEach((pair) => {
-          ws.send(JSON.stringify({ ticks: pair }));
-        });
+        console.log("Frontend WS Connected to Tiingo. Subscribing to ticks...");
+        const tiingoPairs = MONITORED_PAIRS.map(p => p.replace("frx", "").toLowerCase());
+        
+        ws.send(JSON.stringify({
+          eventName: "subscribe",
+          authorization: "6d5442a6595792eed12d7371665df2190ade68fe",
+          eventData: {
+            thresholdLevel: 5,
+            tickers: tiingoPairs
+          }
+        }));
       };
 
       ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.tick) {
-          const symbol = data.tick.symbol;
-          const price = data.tick.quote;
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.messageType === "A" && data.data && data.data.length > 2) {
+            const ticker = String(data.data[1]).toUpperCase();
+            const symbol = "frx" + ticker;
+            
+            // Find the last number in the array which is usually the mid/bid price
+            const price = [...data.data].reverse().find(v => typeof v === 'number');
 
-          setLivePrices((prev) => {
-            // Save the old price so we can compare directions
-            setPrevPrices((prevDir) => ({
-              ...prevDir,
-              [symbol]: prev[symbol] || price
-            }));
-            return {
-              ...prev,
-              [symbol]: price
-            };
-          });
-        }
+            if (symbol && price) {
+              setLivePrices((prev) => {
+                setPrevPrices((prevDir) => ({
+                  ...prevDir,
+                  [symbol]: prev[symbol] || price
+                }));
+                return {
+                  ...prev,
+                  [symbol]: price
+                };
+              });
+            }
+          }
+        } catch(e) {}
       };
 
       ws.onclose = () => {
