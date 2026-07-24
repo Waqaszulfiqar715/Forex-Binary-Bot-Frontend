@@ -115,23 +115,25 @@ export default function App() {
             const ticker = String(data.data[1]).toUpperCase();
             const symbol = "frx" + ticker;
             
-            // Find the last number in the array which is usually the mid/bid price
             const price = [...data.data].reverse().find(v => typeof v === 'number');
 
             if (symbol && price) {
               setLivePrices((prev) => {
-                setPrevPrices((prevDir) => ({
-                  ...prevDir,
-                  [symbol]: prev[symbol] || price
-                }));
-                return {
-                  ...prev,
-                  [symbol]: price
-                };
+                const oldPrice = prev[symbol];
+                
+                // Only update if price actually changed to avoid unnecessary re-renders
+                if (oldPrice !== price) {
+                  setPrevPrices(p => ({ ...p, [symbol]: oldPrice || price }));
+                  return { ...prev, [symbol]: price };
+                }
+                
+                return prev;
               });
             }
           }
-        } catch(e) {}
+        } catch(e) {
+          console.error("WS Parse Error:", e);
+        }
       };
 
       ws.onclose = () => {
