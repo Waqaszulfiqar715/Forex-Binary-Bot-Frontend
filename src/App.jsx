@@ -88,7 +88,8 @@ export default function App() {
   // 3. Connect to Deriv WebSocket for real-time live prices
   useEffect(() => {
     const connectWS = () => {
-      const wsUrl = "wss://api.tiingo.com/fx";
+      // Adding token to URL directly as browsers sometimes get rejected based on Origin without it
+      const wsUrl = "wss://api.tiingo.com/fx?token=6d5442a6595792eed12d7371665df2190ade68fe";
       console.log("Connecting frontend to Tiingo WS for live prices...");
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
