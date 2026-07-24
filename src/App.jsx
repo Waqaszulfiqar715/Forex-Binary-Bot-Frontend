@@ -85,75 +85,54 @@ export default function App() {
     };
   }, []);
 
-  // 3. Connect to Deriv WebSocket for real-time live prices
+  // 3. Poll Tiingo REST API via corsproxy for live prices (bypasses 1-connection WS limit and browser blocks)
   useEffect(() => {
-    const connectWS = () => {
-      // Adding token to URL directly as browsers sometimes get rejected based on Origin without it
-      const wsUrl = "wss://api.tiingo.com/fx?token=6d5442a6595792eed12d7371665df2190ade68fe";
-      console.log("Connecting frontend to Tiingo WS for live prices...");
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
+    let intervalId;
 
-      ws.onopen = () => {
-        console.log("Frontend WS Connected to Tiingo. Subscribing to ticks...");
-        const tiingoPairs = MONITORED_PAIRS.map(p => p.replace("frx", "").toLowerCase());
+    const fetchLivePrices = async () => {
+      try {
+        const tiingoPairs = MONITORED_PAIRS.map(p => p.replace("frx", "").toLowerCase()).join(",");
+        const targetUrl = encodeURIComponent(`https://api.tiingo.com/tiingo/fx/top?tickers=${tiingoPairs}&token=6d5442a6595792eed12d7371665df2190ade68fe`);
+        const proxyUrl = `https://corsproxy.io/?${targetUrl}`;
         
-        ws.send(JSON.stringify({
-          eventName: "subscribe",
-          authorization: "6d5442a6595792eed12d7371665df2190ade68fe",
-          eventData: {
-            thresholdLevel: 5,
-            tickers: tiingoPairs
-          }
-        }));
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          if (data.messageType === "A" && data.data && data.data.length > 2) {
-            const ticker = String(data.data[1]).toUpperCase();
-            const symbol = "frx" + ticker;
+        const response = await fetch(proxyUrl);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          setLivePrices((prev) => {
+            const newPrices = { ...prev };
+            let hasChanges = false;
             
-            const price = [...data.data].reverse().find(v => typeof v === 'number');
-
-            if (symbol && price) {
-              setLivePrices((prev) => {
-                const oldPrice = prev[symbol];
-                
-                // Only update if price actually changed to avoid unnecessary re-renders
-                if (oldPrice !== price) {
-                  setPrevPrices(p => ({ ...p, [symbol]: oldPrice || price }));
-                  return { ...prev, [symbol]: price };
-                }
-                
-                return prev;
-              });
-            }
-          }
-        } catch(e) {
-          console.error("WS Parse Error:", e);
+            data.forEach(item => {
+              const ticker = String(item.ticker).toUpperCase();
+              const symbol = "frx" + ticker;
+              const price = item.midPrice || item.bidPrice;
+              
+              if (symbol && price && prev[symbol] !== price) {
+                // Update prevPrices dynamically without causing nested set state issues
+                setPrevPrices(p => ({ ...p, [symbol]: prev[symbol] || price }));
+                newPrices[symbol] = price;
+                hasChanges = true;
+              }
+            });
+            
+            return hasChanges ? newPrices : prev;
+          });
         }
-      };
-
-      ws.onclose = () => {
-        console.log("Frontend WS disconnected. Reconnecting in 5 seconds...");
-        setTimeout(connectWS, 5000);
-      };
-
-      ws.onerror = (err) => {
-        console.error("Frontend WS Error:", err);
-      };
-    };
-
-    connectWS();
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
+      } catch (err) {
+        console.error("Live Price Fetch Error:", err);
       }
     };
+
+    // Fetch immediately on mount
+    fetchLivePrices();
+    
+    // Poll every 8 seconds (Tiingo limits are 500 req/hr, so 8s = 450 req/hr)
+    intervalId = setInterval(fetchLivePrices, 8000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   // 4. Ticker to update active countdown timers every second
