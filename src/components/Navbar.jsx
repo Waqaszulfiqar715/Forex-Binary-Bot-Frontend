@@ -1,7 +1,7 @@
 import React from 'react';
-import { Shield, Radio, Activity, History, Search, BarChart2 } from 'lucide-react';
+import { Shield, Radio, Activity, History, Search, BarChart2, Bell, BellRing } from 'lucide-react';
 
-export default function Navbar({ activeTab, setActiveTab, activeSignalsCount }) {
+export default function Navbar({ activeTab, setActiveTab, activeSignalsCount, alertsEnabled, onToggleAlerts }) {
   return (
     <header className="navbar">
       <div className="logo-section">
@@ -58,11 +58,37 @@ export default function Navbar({ activeTab, setActiveTab, activeSignalsCount }) 
         </button>
       </nav>
 
-      <div className="connection-badge">
-        <span className="connection-dot"></span>
-        <Radio size={14} style={{ marginRight: '0.25rem' }} />
-        Live Feed
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <button
+          onClick={onToggleAlerts}
+          title={alertsEnabled ? "Desktop popup & sound alerts are active" : "Click to enable sound and desktop popup alerts"}
+          style={{
+            background: alertsEnabled ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+            border: `1px solid ${alertsEnabled ? '#00e676' : 'rgba(255, 255, 255, 0.2)'}`,
+            color: alertsEnabled ? '#00e676' : '#fff',
+            padding: '0.4rem 0.8rem',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            cursor: 'pointer',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            marginRight: '0.8rem',
+            transition: 'all 0.2s'
+          }}
+        >
+          {alertsEnabled ? <BellRing size={15} /> : <Bell size={15} />}
+          {alertsEnabled ? 'Alerts ON' : 'Enable Alerts'}
+        </button>
+
+        <div className="connection-badge">
+          <span className="connection-dot"></span>
+          <Radio size={14} style={{ marginRight: '0.25rem' }} />
+          Live Feed
+        </div>
       </div>
     </header>
   );
 }
+

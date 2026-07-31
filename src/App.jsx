@@ -6,6 +6,7 @@ import ActiveSignals from './components/ActiveSignals';
 import SignalHistory from './components/SignalHistory';
 import SignalDetailModal from './components/SignalDetailModal';
 import WeeklyPerformance from './components/WeeklyPerformance';
+import { playAlertSound, triggerDesktopNotification, requestAlertPermission } from './utils/alertUtils';
 import './App.css';
 
 // Initialize Supabase Client
@@ -29,7 +30,26 @@ export default function App() {
   const [livePrices, setLivePrices] = useState({});
   const [prevPrices, setPrevPrices] = useState({}); // To check price direction (up/down)
   const [ticker, setTicker] = useState(0); // Forces re-render for countdowns
+  const [alertsEnabled, setAlertsEnabled] = useState(() => {
+    return "Notification" in window && Notification.permission === "granted";
+  });
+  const alertsEnabledRef = useRef(alertsEnabled);
   const wsRef = useRef(null);
+
+  useEffect(() => {
+    alertsEnabledRef.current = alertsEnabled;
+  }, [alertsEnabled]);
+
+  const handleToggleAlerts = async () => {
+    if (alertsEnabled) {
+      setAlertsEnabled(false);
+    } else {
+      const granted = await requestAlertPermission();
+      if (granted) {
+        setAlertsEnabled(true);
+      }
+    }
+  };
 
   // 1. Fetch initial signals from database on mount
   useEffect(() => {
@@ -66,6 +86,11 @@ export default function App() {
             console.log('New signal received:', payload.new);
             setSignals((prev) => [payload.new, ...prev]);
             
+            if (alertsEnabledRef.current) {
+              playAlertSound();
+              triggerDesktopNotification(payload.new);
+            }
+
             // Automatically switch to Active Signals tab when a new signal arrives
             setActiveTab('active');
           } else if (payload.eventType === 'UPDATE') {
@@ -147,7 +172,9 @@ export default function App() {
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
-        activeSignalsCount={activeCount} 
+        activeSignalsCount={activeCount}
+        alertsEnabled={alertsEnabled}
+        onToggleAlerts={handleToggleAlerts}
       />
 
       <main style={{ marginTop: '1rem' }}>
