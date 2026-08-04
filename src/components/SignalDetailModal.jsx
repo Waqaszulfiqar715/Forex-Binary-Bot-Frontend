@@ -70,6 +70,12 @@ export default function SignalDetailModal({ signal, onClose }) {
 
           <div className="detail-section">
             <div className="detail-row">
+              <span className="label">Strategy</span>
+              <span className="value" style={{ color: '#00e5ff', fontWeight: 700 }}>
+                {signal.strategy || 'Trend Exhaustion'}
+              </span>
+            </div>
+            <div className="detail-row">
               <span className="label">Entry Price</span>
               <span className="value" style={{ color: '#fff' }}>{Number(signal.entry_price).toFixed(5)}</span>
             </div>
