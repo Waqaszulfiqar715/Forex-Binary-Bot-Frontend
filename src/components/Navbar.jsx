@@ -6,7 +6,7 @@ export default function Navbar({ activeTab, setActiveTab, activeSignalsCount, al
     <header className="navbar">
       <div className="logo-section">
         <Shield className="logo-icon" size={28} />
-        <span className="logo-text">QUANTUM BOT</span>
+        <span className="logo-text">Forex Binary Bot</span>
       </div>
 
       <nav className="nav-tabs">
