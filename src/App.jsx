@@ -177,6 +177,57 @@ export default function App() {
         onToggleAlerts={handleToggleAlerts}
       />
 
+      {/* --- INSTITUTIONAL SESSION-TO-SESSION BANNER --- */}
+      {(() => {
+        const formatUtcToLocal = (utcHour) => {
+          const date = new Date();
+          date.setUTCHours(utcHour, 0, 0, 0);
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        };
+        const localStart = formatUtcToLocal(7);
+        const localEnd = formatUtcToLocal(16);
+        const currentUtcHour = new Date().getUTCHours();
+        const isSessionActive = currentUtcHour >= 7 && currentUtcHour < 16;
+
+        return (
+          <div style={{
+            background: isSessionActive ? 'linear-gradient(90deg, rgba(0, 230, 118, 0.12) 0%, rgba(0, 230, 118, 0.04) 100%)' : 'linear-gradient(90deg, rgba(255, 171, 0, 0.12) 0%, rgba(255, 171, 0, 0.04) 100%)',
+            borderLeft: `4px solid ${isSessionActive ? '#00e676' : '#ffab00'}`,
+            padding: '0.8rem 1.2rem',
+            margin: '1rem 0 0 0',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: isSessionActive ? '#00e676' : '#ffab00',
+                display: 'inline-block',
+                boxShadow: isSessionActive ? '0 0 8px #00e676' : 'none'
+              }} />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>
+                  {isSessionActive ? '🟢 LONDON & NEW YORK SESSION ACTIVE' : '⏸️ ASIAN DEAD ZONE — BOT IN SESSION SLEEP'}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                  Active Institutional Signals: <strong style={{ color: '#fff' }}>07:00 UTC – 16:00 UTC</strong> &nbsp;|&nbsp; Your Local Time: <strong style={{ color: '#00e676' }}>{localStart} – {localEnd}</strong>
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', padding: '0.35rem 0.7rem', borderRadius: '6px', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+              {isSessionActive ? '⚡ 5m SMC Sniper Signals LIVE' : '🛡️ Signals paused to protect capital against choppy low-liquidity noise'}
+            </div>
+          </div>
+        );
+      })()}
+
       <main style={{ marginTop: '1rem' }}>
         {activeTab === 'searching' && (
           <SearchingPairs livePrices={livePrices} prevPrices={prevPrices} />
